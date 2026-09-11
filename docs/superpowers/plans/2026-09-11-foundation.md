@@ -18,6 +18,8 @@
 - JWT signing algorithm: **RS256** private key จะถูกโหลดที่ `auth-service` เท่านั้น (spec §16.10)
 - เปิด TypeScript strict mode ทุกโปรเจกต์ (เป็นข้อสมมติของผม — ไม่ได้ระบุไว้ตรงๆ ใน spec จึงขอบันทึกไว้ให้เห็นชัด ปรับได้ถ้าไม่ต้องการ)
 - npm scope สำหรับ internal package: `@ecommerce/*` (เช่น `@ecommerce/shared-types`) — เป็นการตั้งชื่อในการ implement เท่านั้น ไม่เกี่ยวกับชื่อโฟลเดอร์ `e-commerce`
+- **✅ อัปเดต (พบระหว่าง implement Task 1-2):** workspace นี้เป็น ESM (`"type": "module"`) — import แบบ relative path **ต้องมีนามสกุล `.js` ต่อท้ายเสมอ** แม้ไฟล์จริงจะเป็น `.ts` เช่น `from './enums.js'` ไม่ใช่ `from './enums'` — มีผลกับทุก task ในแผนนี้ ไม่ใช่แค่ Task 2
+- **✅ อัปเดต (ผู้ใช้ตัดสินใจระหว่าง implement Task 2):** `UserRole` เปลี่ยนจาก 3 ค่า (`CUSTOMER|SELLER|ADMIN`) เป็น **4 ค่า: `SUPER_ADMIN|ADMIN|SELLER|MEMBER`** (`MEMBER` แทนที่ตำแหน่งเดิมของ `CUSTOMER`) — รายละเอียดอยู่ในเอกสาร spec ข้อ 13 ที่อัปเดตแล้ว
 
 ---
 
@@ -97,7 +99,7 @@ EOF
 - แก้ไข: `libs/shared-types/src/index.ts` (barrel export)
 
 **Interface:**
-- ผลลัพธ์: `UserRole` enum (`CUSTOMER`, `SELLER`, `ADMIN`), type guard `isUserRole(value: string): value is UserRole`, interface `AuthenticatedUserClaims { userId: string; role: UserRole }` — ทุกที่ import ผ่าน `@ecommerce/shared-types`
+- ผลลัพธ์: `UserRole` enum (`SUPER_ADMIN`, `ADMIN`, `SELLER`, `MEMBER`), type guard `isUserRole(value: string): value is UserRole`, interface `AuthenticatedUserClaims { userId: string; role: UserRole }` — ทุกที่ import ผ่าน `@ecommerce/shared-types`
 
 - [ ] **ขั้นตอนที่ 1: สร้าง library**
 
@@ -109,24 +111,25 @@ pnpm nx g @nx/js:lib shared-types --directory=libs/shared-types --bundler=tsc --
 
 สร้าง `libs/shared-types/src/lib/enums.spec.ts`:
 ```typescript
-import { UserRole, isUserRole } from './enums';
+import { UserRole, isUserRole } from './enums.js';
 
 describe('isUserRole', () => {
   it('returns true for every UserRole value', () => {
-    expect(isUserRole('CUSTOMER')).toBe(true);
-    expect(isUserRole('SELLER')).toBe(true);
+    expect(isUserRole('SUPER_ADMIN')).toBe(true);
     expect(isUserRole('ADMIN')).toBe(true);
+    expect(isUserRole('SELLER')).toBe(true);
+    expect(isUserRole('MEMBER')).toBe(true);
   });
 
   it('returns false for an unknown string', () => {
-    expect(isUserRole('SUPERADMIN')).toBe(false);
+    expect(isUserRole('GUEST')).toBe(false);
     expect(isUserRole('')).toBe(false);
   });
 });
 
 describe('UserRole', () => {
-  it('has exactly three roles', () => {
-    expect(Object.values(UserRole)).toHaveLength(3);
+  it('has exactly four roles', () => {
+    expect(Object.values(UserRole)).toHaveLength(4);
   });
 });
 ```
@@ -143,9 +146,10 @@ pnpm nx test shared-types
 สร้าง `libs/shared-types/src/lib/enums.ts`:
 ```typescript
 export enum UserRole {
-  CUSTOMER = 'CUSTOMER',
-  SELLER = 'SELLER',
+  SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
+  SELLER = 'SELLER',
+  MEMBER = 'MEMBER',
 }
 
 export function isUserRole(value: string): value is UserRole {
@@ -160,7 +164,7 @@ export interface AuthenticatedUserClaims {
 
 อัปเดต `libs/shared-types/src/index.ts`:
 ```typescript
-export * from './lib/enums';
+export * from './lib/enums.js';
 ```
 
 - [ ] **ขั้นตอนที่ 4: รัน test เพื่อยืนยันว่าผ่าน**
@@ -381,7 +385,7 @@ describe('RolesGuard', () => {
     const reflector = new Reflector();
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
     const guard = new RolesGuard(reflector);
-    const ctx = makeContext('CUSTOMER', undefined);
+    const ctx = makeContext('MEMBER', undefined);
     expect(guard.canActivate(ctx)).toBe(true);
   });
 
@@ -397,7 +401,7 @@ describe('RolesGuard', () => {
     const reflector = new Reflector();
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['ADMIN']);
     const guard = new RolesGuard(reflector);
-    const ctx = makeContext('CUSTOMER');
+    const ctx = makeContext('MEMBER');
     expect(guard.canActivate(ctx)).toBe(false);
   });
 });
@@ -807,7 +811,7 @@ model User {
   passwordHash  String?
   oauthProvider String?
   oauthId       String?
-  role          Role     @default(CUSTOMER)
+  role          Role     @default(MEMBER)
   createdAt     DateTime @default(now())
   seller        Seller?
 
@@ -823,9 +827,10 @@ model Seller {
 }
 
 enum Role {
-  CUSTOMER
-  SELLER
+  SUPER_ADMIN
   ADMIN
+  SELLER
+  MEMBER
 }
 
 enum SellerStatus {
@@ -1099,13 +1104,13 @@ describe('AuthService.register', () => {
   it('creates a user with a bcrypt-hashed password, never the plaintext', async () => {
     const prisma = makePrismaMock();
     prisma.user.create.mockImplementation(({ data }: any) =>
-      Promise.resolve({ id: 'u1', email: data.email, passwordHash: data.passwordHash, role: 'CUSTOMER' })
+      Promise.resolve({ id: 'u1', email: data.email, passwordHash: data.passwordHash, role: 'MEMBER' })
     );
     const service = new AuthService(prisma, {} as any);
 
     const result = await service.register({ email: 'a@b.com', password: 'password123' });
 
-    expect(result).toEqual({ id: 'u1', email: 'a@b.com', role: 'CUSTOMER' });
+    expect(result).toEqual({ id: 'u1', email: 'a@b.com', role: 'MEMBER' });
     const createArgs = prisma.user.create.mock.calls[0][0];
     expect(createArgs.data.passwordHash).not.toBe('password123');
     expect(createArgs.data.passwordHash.length).toBeGreaterThan(20);
@@ -1289,7 +1294,7 @@ describe('AuthService.login', () => {
         id: 'u1',
         email: 'a@b.com',
         passwordHash,
-        role: 'CUSTOMER',
+        role: 'MEMBER',
       }),
     });
     const service = new AuthService(prisma, { privateKey, publicKey });
@@ -1298,13 +1303,13 @@ describe('AuthService.login', () => {
 
     const decoded = jwt.verify(accessToken, publicKey, { algorithms: ['RS256'] }) as any;
     expect(decoded.sub).toBe('u1');
-    expect(decoded.role).toBe('CUSTOMER');
+    expect(decoded.role).toBe('MEMBER');
   });
 
   it('rejects an incorrect password', async () => {
     const passwordHash = await bcrypt.hash('correct-password', 10);
     const prisma = makePrismaMock({
-      findUnique: jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b.com', passwordHash, role: 'CUSTOMER' }),
+      findUnique: jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b.com', passwordHash, role: 'MEMBER' }),
     });
     const service = new AuthService(prisma, { privateKey, publicKey });
 
@@ -1450,28 +1455,28 @@ function makePrismaMock(overrides: Partial<Record<string, jest.Mock>> = {}) {
 describe('AuthService.findOrCreateOAuthUser', () => {
   it('returns the existing user when provider+oauthId already linked', async () => {
     const prisma = makePrismaMock({
-      findFirst: jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b.com', role: 'CUSTOMER' }),
+      findFirst: jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b.com', role: 'MEMBER' }),
     });
     const service = new AuthService(prisma, {} as any);
 
     const result = await service.findOrCreateOAuthUser('google', 'g-123', 'a@b.com');
 
-    expect(result).toEqual({ id: 'u1', email: 'a@b.com', role: 'CUSTOMER' });
+    expect(result).toEqual({ id: 'u1', email: 'a@b.com', role: 'MEMBER' });
     expect(prisma.user.create).not.toHaveBeenCalled();
   });
 
-  it('creates a new CUSTOMER user when no match exists', async () => {
+  it('creates a new MEMBER user when no match exists', async () => {
     const prisma = makePrismaMock({
       findFirst: jest.fn().mockResolvedValue(null),
-      create: jest.fn().mockResolvedValue({ id: 'u2', email: 'new@b.com', role: 'CUSTOMER' }),
+      create: jest.fn().mockResolvedValue({ id: 'u2', email: 'new@b.com', role: 'MEMBER' }),
     });
     const service = new AuthService(prisma, {} as any);
 
     const result = await service.findOrCreateOAuthUser('facebook', 'fb-456', 'new@b.com');
 
-    expect(result).toEqual({ id: 'u2', email: 'new@b.com', role: 'CUSTOMER' });
+    expect(result).toEqual({ id: 'u2', email: 'new@b.com', role: 'MEMBER' });
     expect(prisma.user.create).toHaveBeenCalledWith({
-      data: { email: 'new@b.com', oauthProvider: 'facebook', oauthId: 'fb-456', role: 'CUSTOMER' },
+      data: { email: 'new@b.com', oauthProvider: 'facebook', oauthId: 'fb-456', role: 'MEMBER' },
     });
   });
 });
@@ -1501,7 +1506,7 @@ pnpm nx test auth-service
     }
 
     const created = await this.prisma.user.create({
-      data: { email, oauthProvider: provider, oauthId, role: 'CUSTOMER' },
+      data: { email, oauthProvider: provider, oauthId, role: 'MEMBER' },
     });
     return { id: created.id, email: created.email, role: created.role as UserRole };
   }
@@ -1669,6 +1674,6 @@ curl -s -X POST http://localhost:3001/auth/login -H 'Content-Type: application/j
   -d '{"email":"demo@example.com","password":"password123"}'
 kill %1
 ```
-ผลลัพธ์ที่คาดหวัง: register คืนค่า `{"id":"...","email":"demo@example.com","role":"CUSTOMER"}`; login คืนค่า `{"accessToken":"...","refreshToken":"..."}`
+ผลลัพธ์ที่คาดหวัง: register คืนค่า `{"id":"...","email":"demo@example.com","role":"MEMBER"}`; login คืนค่า `{"accessToken":"...","refreshToken":"..."}`
 
 **สิ่งที่ยังไม่อยู่ในแผนนี้ (จะอยู่ใน Plan 2 — Catalog + Infra):** `catalog-service`, config ของ Kong, `docker-compose.yml`, web app skeleton, data model ของ GachaBox/AccountItem/TopupCode, field-level encryption

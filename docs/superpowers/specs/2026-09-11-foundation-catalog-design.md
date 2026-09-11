@@ -259,13 +259,20 @@ e-commerce/
 
 ## 13. Data Model: Auth
 
+**✅ อัปเดต (ระหว่าง implementation Task 2):** role model เปลี่ยนจาก 3 ระดับ (`CUSTOMER|SELLER|ADMIN`) เป็น **4 ระดับ** ตามที่ผู้ใช้ตัดสินใจตอนเขียน `libs/shared-types`:
+
 ```
-User    { id, email, passwordHash?, oauthProvider?, oauthId?, role: CUSTOMER|SELLER|ADMIN, createdAt }
+User    { id, email, passwordHash?, oauthProvider?, oauthId?, role: SUPER_ADMIN|ADMIN|SELLER|MEMBER, createdAt }
 Seller  { id, userId(FK), storeName, status }   // มีไว้ตั้งแต่ต้นแม้มีร้านเดียว เพื่อรองรับ multi-vendor
 ```
+- `MEMBER` = ผู้ซื้อ/ลูกค้าทั่วไป (แทนที่ตำแหน่งเดิมของ `CUSTOMER`)
+- `SELLER` = ผู้ขาย (เหมือนเดิม)
+- `ADMIN` / `SUPER_ADMIN` = สองระดับของผู้ดูแลระบบ — **ยังไม่ได้ระบุความต่างชัดเจนระหว่างสองระดับนี้** (เช่น `SUPER_ADMIN` จัดการ seller/ตั้งค่าระบบได้ ส่วน `ADMIN` จัดการแค่ order/content) — ต้องระบุให้ชัดก่อนเขียน `RolesGuard` จริงจังใน Task 4 ไม่งั้นจะแยกสิทธิ์สองระดับนี้ไม่ออก
 - Password: bcrypt hash
 - Social login: ผูกด้วย `oauthProvider` + `oauthId`
 - ออก JWT (access + refresh token) เซ็นด้วย **RS256** (private key อยู่ที่ `auth-service` เท่านั้น, Kong ถือแค่ public key สำหรับตรวจ signature — ดูเหตุผลในข้อ 16.10)
+
+**ผลกระทบต่อส่วนอื่นที่ต้องแก้ตาม:** Prisma `Role` enum (Task 7 ของแผน implementation), ตัวอย่าง `@Roles(...)` ใน `libs/auth-guards` (Task 4), และ default role ตอนสมัคร/OAuth ที่เดิมกำหนดเป็น `CUSTOMER` (Task 9, Task 11 ของแผน) ต้องเปลี่ยนเป็น `MEMBER` ทั้งหมด
 
 ## 14. Data Model: Catalog
 
