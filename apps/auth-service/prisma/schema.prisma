@@ -1,0 +1,42 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../libs/prisma-client-auth/src/generated"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String?
+  oauthProvider String?
+  oauthId       String?
+  role          Role     @default(MEMBER)
+  createdAt     DateTime @default(now())
+  seller        Seller?
+
+  @@unique([oauthProvider, oauthId])
+}
+
+model Seller {
+  id        String       @id @default(uuid())
+  userId    String       @unique
+  user      User         @relation(fields: [userId], references: [id])
+  storeName String
+  status    SellerStatus @default(ACTIVE)
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  SELLER
+  MEMBER
+}
+
+enum SellerStatus {
+  ACTIVE
+  SUSPENDED
+}

@@ -1,0 +1,61 @@
+# Postgres instances for auth-service, one per environment.
+# auth-service owns its own Postgres — it must never share a database
+# instance or schema with any other service.
+#
+# Usage:
+#   cp apps/auth-service/.env.example apps/auth-service/.env   # fill in real values
+#   docker compose -f apps/auth-service/docker-compose.yml up -d dev
+#   docker compose -f apps/auth-service/docker-compose.yml up -d beta
+#   docker compose -f apps/auth-service/docker-compose.yml up -d prod
+#
+# Only bring up the environment(s) you need. Each service has its own
+# container, host port, and named volume so data is never shared across
+# environments.
+
+services:
+  dev:
+    image: postgres:16
+    container_name: auth-service-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${AUTH_DB_DEV_USER:-postgres}
+      POSTGRES_PASSWORD: ${AUTH_DB_DEV_PASSWORD:-postgres}
+      POSTGRES_DB: ${AUTH_DB_DEV_NAME:-auth}
+    ports:
+      - '${AUTH_DB_DEV_PORT:-5433}:5432'
+    volumes:
+      - auth-db-dev-data:/var/lib/postgresql/data
+
+  beta:
+    image: postgres:16
+    container_name: auth-service-db-beta
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${AUTH_DB_BETA_USER:-postgres}
+      POSTGRES_PASSWORD: ${AUTH_DB_BETA_PASSWORD:-postgres}
+      POSTGRES_DB: ${AUTH_DB_BETA_NAME:-auth_beta}
+    ports:
+      - '${AUTH_DB_BETA_PORT:-5434}:5432'
+    volumes:
+      - auth-db-beta-data:/var/lib/postgresql/data
+
+  prod:
+    image: postgres:16
+    container_name: auth-service-db-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${AUTH_DB_PROD_USER:-postgres}
+      POSTGRES_PASSWORD: ${AUTH_DB_PROD_PASSWORD:-postgres}
+      POSTGRES_DB: ${AUTH_DB_PROD_NAME:-auth_prod}
+    ports:
+      - '${AUTH_DB_PROD_PORT:-5435}:5432'
+    volumes:
+      - auth-db-prod-data:/var/lib/postgresql/data
+
+volumes:
+  auth-db-dev-data:
+    name: auth-service-db-dev-data
+  auth-db-beta-data:
+    name: auth-service-db-beta-data
+  auth-db-prod-data:
+    name: auth-service-db-prod-data

@@ -25,6 +25,10 @@
     "noUncheckedSideEffectImports": false,
     "types": [
       "*"
-    ]
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@ecommerce/prisma-client-auth": ["libs/prisma-client-auth/src/generated"]
+    }
   }
 }

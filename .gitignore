@@ -49,3 +49,11 @@ Thumbs.db
 .nx/self-healing
 .nx/migrate-runs
 test-output
+
+# env files (never commit real secrets; keep .env.example)
+.env
+.env.*
+!.env.example
+
+# generated Prisma client
+libs/prisma-client-auth/src/generated

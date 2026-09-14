@@ -1,5 +1,9 @@
 # packages:
 #   - 'packages/*'
 packages:
-    - 'apps/*'
-    - 'libs/**'
+  - 'apps/*'
+  - 'libs/**'
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true
