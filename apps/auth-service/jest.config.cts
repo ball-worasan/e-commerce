@@ -22,7 +22,7 @@ module.exports = {
     'libs/prisma-client-auth/src/generated',
   ],
   // The generated Prisma client isn't a real workspace package (no
-  // node_modules symlink) — it's reached only via the tsconfig.base.json
+  // node_modules symlink) — it's reached only via the tsconfig.app.json
   // path mapping. Jest's default resolver can't see tsconfig paths, and
   // its TS-based fallback resolves to the .d.ts (types) file instead of
   // the runtime .js, so map it explicitly here.
