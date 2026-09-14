@@ -3,16 +3,16 @@
   "version": "0.0.1",
   "private": true,
   "type": "commonjs",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/src/index.js",
+  "module": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
       "@ecommerce/source": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
     }
   },
   "nx": {
@@ -26,18 +26,18 @@
           "outputPath": "libs/tools/dist",
           "main": "libs/tools/src/index.ts",
           "tsConfig": "libs/tools/tsconfig.lib.json",
-          "rootDir": "libs/tools/src",
+          "rootDir": "libs/tools",
           "generatePackageJson": false,
           "assets": [
             {
               "input": "./libs/tools/src",
               "glob": "**/!(*.ts)",
-              "output": "."
+              "output": "./src"
             },
             {
               "input": "./libs/tools/src",
               "glob": "**/*.d.ts",
-              "output": "."
+              "output": "./src"
             }
           ]
         }

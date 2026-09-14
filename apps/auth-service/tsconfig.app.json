@@ -2,9 +2,6 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": "../..",
-    "paths": {
-      "@ecommerce/prisma-client-auth": ["libs/prisma-client-auth/src/generated"]
-    },
     "outDir": "dist",
     "types": ["node"],
     "rootDir": "src",

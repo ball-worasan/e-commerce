@@ -5,14 +5,13 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { AuthController } from './auth/auth.controller.js';
 import { AuthService } from './auth/auth.service.js';
 
-const env = loadEnv();
+export const env = loadEnv();
 const jwtKeys = loadJwtKeys(env);
 
 @Module({
   controllers: [HealthController, AuthController],
   providers: [
     PrismaService,
-    { provide: 'JWT_KEYS', useValue: jwtKeys },
     {
       provide: AuthService,
       useFactory: (prisma: PrismaService) => new AuthService(prisma, jwtKeys),

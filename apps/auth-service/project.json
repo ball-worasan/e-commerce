@@ -5,8 +5,19 @@
   "projectType": "application",
   "tags": [],
   "targets": {
+    "prisma-generate": {
+      "cache": true,
+      "inputs": ["{workspaceRoot}/apps/auth-service/prisma/schema.prisma"],
+      "outputs": ["{workspaceRoot}/libs/prisma-client-auth/src/generated"],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "prisma generate --schema=apps/auth-service/prisma/schema.prisma"
+      }
+    },
     "build": {
       "executor": "@nx/webpack:webpack",
+      "dependsOn": ["prisma-generate"],
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
@@ -81,6 +92,7 @@
       }
     },
     "test": {
+      "dependsOn": ["^build", "prisma-generate"],
       "options": {
         "passWithNoTests": true
       }

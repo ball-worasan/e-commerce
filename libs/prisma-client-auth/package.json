@@ -1,0 +1,7 @@
+{
+  "name": "@ecommerce/prisma-client-auth",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./src/generated/index.js",
+  "types": "./src/generated/index.d.ts"
+}
