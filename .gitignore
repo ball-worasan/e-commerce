@@ -57,3 +57,6 @@ test-output
 
 # generated Prisma client
 libs/prisma-client-auth/src/generated
+
+# JWT secrets (local dev only)
+secrets/
