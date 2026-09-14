@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "Service",
+  "title": "Generate a NestJS backend service",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Service name, e.g. catalog-service",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-prompt": "What name would you like to use for the service?"
+    }
+  },
+  "required": ["name"]
+}

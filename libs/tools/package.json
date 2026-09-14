@@ -1,0 +1,59 @@
+{
+  "name": "@ecommerce/service-generator",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@ecommerce/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/js:tsc",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "options": {
+          "outputPath": "libs/tools/dist",
+          "main": "libs/tools/src/index.ts",
+          "tsConfig": "libs/tools/tsconfig.lib.json",
+          "rootDir": "libs/tools/src",
+          "generatePackageJson": false,
+          "assets": [
+            {
+              "input": "./libs/tools/src",
+              "glob": "**/!(*.ts)",
+              "output": "."
+            },
+            {
+              "input": "./libs/tools/src",
+              "glob": "**/*.d.ts",
+              "output": "."
+            }
+          ]
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.0.1",
+    "@nx/devkit": "23.2.1",
+    "@nx/nest": "^23.2.1",
+    "tslib": "^2.3.0"
+  },
+  "generators": "./generators.json",
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo",
+    "generators.json"
+  ]
+}

@@ -11,6 +11,9 @@
     },
     {
       "path": "./libs/auth-guards"
+    },
+    {
+      "path": "./libs/tools"
     }
   ],
   "compilerOptions": {}
