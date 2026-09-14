@@ -8,6 +8,9 @@
     },
     {
       "path": "./libs/shared-config"
+    },
+    {
+      "path": "./libs/auth-guards"
     }
   ],
   "compilerOptions": {}
