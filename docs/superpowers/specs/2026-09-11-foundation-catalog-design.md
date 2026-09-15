@@ -80,6 +80,8 @@
 
 รวม backend 5 services (2 ตัวแรกสร้างตอนนี้) + Kong (ทำหน้าที่ที่ `api-gateway` เคยทำ)
 
+⚠️ **อัปเดต 2026-09-15:** เพิ่ม `notification-service` เป็น service ที่ 6 (นอกแผนเดิม) ดู [`2026-09-15-notification-service-design.md`](./2026-09-15-notification-service-design.md)
+
 ---
 
 ## 6. Frontend Apps
@@ -154,7 +156,7 @@ Kong **ไม่ได้ทำ** business logic เฉพาะโดเมน 
 
 | Tool | ใช้ทำอะไร | หมายเหตุ |
 |---|---|---|
-| Redis | cache, และ backend สำหรับ session/rate-limit ในอนาคต | ยังไม่ใช้เป็น message broker ตอนนี้ (ดูข้อ 3) |
+| Redis | cache, และ backend สำหรับ session/rate-limit ในอนาคต | ⚠️ **อัปเดต 2026-09-15:** เปลี่ยนมติแล้ว — ใช้เป็น message broker (Redis + BullMQ) สำหรับ `auth-service` → `notification-service` ด้วย ดู [`2026-09-15-notification-service-design.md`](./2026-09-15-notification-service-design.md) ข้อ 12 |
 | Object storage (MinIO ตอน dev / S3-compatible ตอน production) | เก็บรูปสินค้า | เลือก MinIO เพราะ deploy เป็น container ได้บน VM เดียวกัน ไม่ผูก cloud provider ใดเจ้าหนึ่ง |
 | Email service (เช่น Resend หรือ SMTP ปกติ) | ยืนยันอีเมล, ลืมรหัสผ่าน | ยังไม่ fix ผู้ให้บริการ — เลือกตอน implement auth-service |
 | Payment gateway | ชำระเงิน (พร้อมเพย์/บัตร) | **ยังไม่ตัดสินใจ** — จะออกแบบใน sub-project 2 (Order & Payment) โดยเฉพาะ |
