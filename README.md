@@ -1,4 +1,15 @@
-# New Nx Repository
+# e-commerce workspace
+
+This repository currently contains a TypeScript/Nx workspace and the
+`@ecommerce/shared-types` library. It does **not** yet contain a runnable web,
+API, or worker application. The existing PostgreSQL instance on `zen-kun` is
+not connected to this source tree by any deployment configuration.
+
+CI validates the current library with pnpm and Node.js 24. There is no GHCR
+image or Kubernetes deployment until an application, its runtime contract, and
+its data requirements exist. See [deployment status](docs/deployment.md).
+
+## Original Nx workspace notes
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
