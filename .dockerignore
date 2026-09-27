@@ -1,0 +1,13 @@
+.git
+.github
+.nx
+.pnpm-store
+**/node_modules
+**/dist
+**/out-tsc
+**/coverage
+.env
+.env.*
+!.env.example
+docs
+*.log
