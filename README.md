@@ -1,13 +1,13 @@
 # e-commerce workspace
 
-This repository currently contains a TypeScript/Nx workspace and the
-`@ecommerce/shared-types` library. It does **not** yet contain a runnable web,
-API, or worker application. The existing PostgreSQL instance on `zen-kun` is
-not connected to this source tree by any deployment configuration.
+This pnpm/Nx monorepo contains a NestJS API in `apps/api` and the
+`@ecommerce/shared-types` library. The API is a modular monolith with product,
+cart, and order modules backed by PostgreSQL. It is a **development foundation**:
+the write gate is not customer authentication, orders do not reserve stock, and
+no payment provider is connected. Do not expose it as a production storefront.
 
-CI validates the current library with pnpm and Node.js 24. There is no GHCR
-image or Kubernetes deployment until an application, its runtime contract, and
-its data requirements exist. See [deployment status](docs/deployment.md).
+See [development and deployment](docs/deployment.md) for setup, API routes,
+database migrations, Docker, CI, and the GitOps readiness gates.
 
 ## Original Nx workspace notes
 
