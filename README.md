@@ -1,8 +1,10 @@
 # e-commerce workspace
 
-This pnpm/Nx monorepo contains a NestJS API in `apps/api` and the
-`@ecommerce/shared-types` library. The API is a modular monolith with product,
-cart, and order modules backed by PostgreSQL. It is a **development foundation**:
+This pnpm/Nx monorepo contains the deployed NestJS DEV API in `apps/api`,
+plus newer `apps/auth-service` and `apps/web` source projects that are **not
+part of the verified DEV deployment** described here. The API is a modular
+monolith with product, cart, and order modules backed by PostgreSQL. It is a
+**development foundation**:
 the write gate is not customer authentication, orders do not reserve stock, and
 no payment provider is connected. Do not expose it as a production storefront.
 

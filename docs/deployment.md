@@ -80,8 +80,21 @@ the convenience `:main` tag using `GITHUB_TOKEN`. GitOps must deploy the
 immutable SHA tag or a digest, never rely on `:main`. Package visibility and
 k3s pull access must be verified before Argo sync.
 
-The intended path is GitHub → Actions → GHCR → `homelab-gitops` → Argo CD →
-k3s DEV. Staging and production require independent data, secret, security,
-route, and rollback decisions. The existing `ecommerce-postgres` databases are
-an empty legacy scaffold by observed row counts; this application is not
-connected to them. Legacy auth-service and Gitea are separate dependencies.
+The verified DEV path is GitHub → Actions → GHCR → `homelab-gitops` → Argo CD →
+k3s DEV. On 2026-09-28 the digest-pinned API and isolated PostgreSQL 18
+became Ready in namespace `dev`. The migration hook completed, an internal
+synthetic product/cart/order flow passed, and the API recovered from a pod
+replacement with data intact. The Service is ClusterIP only; use a temporary
+local port-forward for manual checks rather than exposing a NodePort.
+
+DEV credentials come from Infisical through the `ecommerce-dev-secrets`
+ExternalSecret. The GitHub deploy key is a protected Argo repository Secret;
+its private material is never stored in Git. The local-path DEV PVC has no
+dedicated logical backup producer yet: keep only experimental data there.
+Staging is prepared in Git but not applied; production requires independent
+data, identity, payment, security, route, and rollback decisions. The existing
+Docker `ecommerce-postgres` databases are an empty retained scaffold by
+observed row counts; this application is not connected to them. Legacy
+the live Gitea-backed auth-service and Gitea are separate dependencies. Newer
+`apps/auth-service` and `apps/web` source projects exist in this repository but
+were not built, deployed, or validated as part of this API DEV deployment.
