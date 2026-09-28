@@ -1,4 +1,15 @@
-# New Nx Repository
+# e-commerce workspace
+
+This pnpm/Nx monorepo contains a NestJS API in `apps/api` and the
+`@ecommerce/shared-types` library. The API is a modular monolith with product,
+cart, and order modules backed by PostgreSQL. It is a **development foundation**:
+the write gate is not customer authentication, orders do not reserve stock, and
+no payment provider is connected. Do not expose it as a production storefront.
+
+See [development and deployment](docs/deployment.md) for setup, API routes,
+database migrations, Docker, CI, and the GitOps readiness gates.
+
+## Original Nx workspace notes
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
