@@ -1,0 +1,222 @@
+.boxContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24px;
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+  padding: 40px 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(201, 166, 107, 0.25);
+  background-color: #1A1A1D;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.title {
+  color: #F2EFE9;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.subtitle {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  color: #8F8B85;
+}
+
+.email {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #C9A66B;
+  word-break: break-all;
+}
+
+.refCode {
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: #5C5954;
+}
+
+@keyframes goldPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(201, 166, 107, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(201, 166, 107, 0);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-6px);
+  }
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+.otpInputs {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.otpInputs.shaking {
+  animation: shake 0.5s ease;
+}
+
+.otpBoxWrapper {
+  position: relative;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+}
+
+.borderRunner {
+  position: absolute;
+  inset: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.borderRunner rect {
+  fill: none;
+  stroke: #C9A66B;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 20 80;
+}
+
+.otpBoxWrapper.sparking .borderRunner {
+  opacity: 1;
+  animation: dashRun 1.1s linear infinite;
+}
+
+@keyframes dashRun {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+.otpBox {
+  position: relative;
+  z-index: 1;
+  width: 44px;
+  height: 52px;
+  border-radius: 6px;
+  border: 1px solid rgba(201, 166, 107, 0.25);
+  background-color: #0E0E10;
+  color: #F2EFE9;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.otpBox:focus {
+  border-color: #C9A66B;
+  box-shadow: 0 0 0 3px rgba(201, 166, 107, 0.12);
+}
+
+.otpBox:disabled {
+  opacity: 0.6;
+}
+
+.otpBox.pulsing {
+  animation: goldPulse 0.5s ease;
+}
+
+.resultOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.resultOverlay.showSuccess {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.resendText {
+  margin-top: 24px;
+  font-size: 0.85rem;
+  color: #8F8B85;
+}
+
+.resendMuted {
+  color: #5C5954;
+}
+
+.resendLink {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #C9A66B;
+  cursor: pointer;
+}
+
+.resendLink:hover {
+  color: #D9BC85;
+}
+
+@media (max-width: 480px) {
+  .box {
+    padding: 32px 20px;
+  }
+
+  .otpBox {
+    width: 38px;
+    height: 46px;
+    font-size: 1.1rem;
+  }
+}

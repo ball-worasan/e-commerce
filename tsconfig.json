@@ -17,6 +17,9 @@
     },
     {
       "path": "./apps/auth-service"
+    },
+    {
+      "path": "./apps/web"
     }
   ],
   "compilerOptions": {}

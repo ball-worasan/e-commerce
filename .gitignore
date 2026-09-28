@@ -60,3 +60,7 @@ libs/prisma-client-auth/src/generated
 
 # JWT secrets (local dev only)
 secrets/
+
+# Next.js
+.next
+out
