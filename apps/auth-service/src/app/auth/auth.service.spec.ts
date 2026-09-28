@@ -1,15 +1,8 @@
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { generateKeyPairSync } from 'node:crypto';
 import { AuthService } from './auth.service.js';
-
-// Resolve relative to this file's own location, not process.cwd() - Nx's
-// jest executor runs with cwd set to the project root (apps/auth-service),
-// not the repo root, so a cwd-relative path would point at the wrong place
-// (see src/test-setup.ts for the same convention).
-const repoRoot = join(__dirname, '..', '..', '..', '..', '..');
 
 function makePrismaMock(overrides: Partial<Record<string, jest.Mock>> = {}) {
   return {
@@ -49,8 +42,12 @@ describe('AuthService.register', () => {
 });
 
 describe('AuthService.login', () => {
-  const privateKey = readFileSync(join(repoRoot, 'secrets/jwt-private.pem'), 'utf-8');
-  const publicKey = readFileSync(join(repoRoot, 'secrets/jwt-public.pem'), 'utf-8');
+  // Test-only RSA keys stay in memory and cannot become runtime credentials.
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+  });
 
   it('returns signed tokens for correct credentials', async () => {
     const passwordHash = await bcrypt.hash('correct-password', 10);
