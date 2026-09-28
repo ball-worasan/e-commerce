@@ -96,5 +96,10 @@ data, identity, payment, security, route, and rollback decisions. The existing
 Docker `ecommerce-postgres` databases are an empty retained scaffold by
 observed row counts; this application is not connected to them. Legacy
 the live Gitea-backed auth-service and Gitea are separate dependencies. Newer
-`apps/auth-service` and `apps/web` source projects exist in this repository but
-were not built, deployed, or validated as part of this API DEV deployment.
+`apps/auth-service` and `apps/web` source projects exist in this repository.
+The new auth-service is intended and participates in the full Nx CI gate;
+its tests use in-memory JWT keys and mocks instead of production keys or an
+unmanaged localhost database. It remains undeployed. The web project also
+participates in CI but has no verified homelab deployment yet. The API DEV
+deployment remains pinned to its last independently verified digest until a
+new whole-workspace CI run and GHCR publication pass.

@@ -10,6 +10,8 @@ no payment provider is connected. Do not expose it as a production storefront.
 
 See [development and deployment](docs/deployment.md) for setup, API routes,
 database migrations, Docker, CI, and the GitOps readiness gates.
+See [new auth-service source](apps/auth-service/README.md) for its runtime and
+test isolation. It is distinct from the legacy Gitea-backed k3s Applications.
 
 ## Original Nx workspace notes
 
