@@ -1,7 +1,6 @@
 import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RolesGuard } from './roles.guard.js';
-import { ROLES_KEY } from './roles.decorator.js';
 
 function makeContext(role: string | undefined, requiredRoles?: string[]): ExecutionContext {
   const request: any = { user: role ? { userId: 'u1', role } : undefined };
