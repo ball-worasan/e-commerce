@@ -1,8 +1,8 @@
 # e-commerce workspace
 
-This pnpm/Nx monorepo contains the deployed NestJS DEV API in `apps/api`,
-plus newer `apps/auth-service` and `apps/web` source projects that are **not
-part of the verified DEV deployment** described here. The API is a modular
+This pnpm/Nx monorepo contains the NestJS API deployed to isolated DEV and
+STAGING environments from `apps/api`, plus intended `apps/auth-service` and
+`apps/web` source projects that are **not deployed**. The API is a modular
 monolith with product, cart, and order modules backed by PostgreSQL. It is a
 **development foundation**:
 the write gate is not customer authentication, orders do not reserve stock, and

@@ -80,26 +80,29 @@ the convenience `:main` tag using `GITHUB_TOKEN`. GitOps must deploy the
 immutable SHA tag or a digest, never rely on `:main`. Package visibility and
 k3s pull access must be verified before Argo sync.
 
-The verified DEV path is GitHub → Actions → GHCR → `homelab-gitops` → Argo CD →
-k3s DEV. On 2026-09-28 the digest-pinned API and isolated PostgreSQL 18
-became Ready in namespace `dev`. The migration hook completed, an internal
-synthetic product/cart/order flow passed, and the API recovered from a pod
-replacement with data intact. The Service is ClusterIP only; use a temporary
-local port-forward for manual checks rather than exposing a NodePort.
+The verified path is GitHub → Actions → GHCR → `homelab-gitops` → Argo CD →
+k3s DEV and STAGING. DEV became Ready on 2026-09-28. STAGING was manually
+synced on 2026-09-29 with a separate Infisical scope, PostgreSQL 18, and 2 GiB
+PVC. In both environments, the migration hook completed, internal synthetic
+product/cart/order flows passed, and the API recovered from a pod replacement
+with data intact. Both Services are ClusterIP only; use a temporary local
+port-forward for manual checks rather than exposing a NodePort.
 
 DEV credentials come from Infisical through the `ecommerce-dev-secrets`
 ExternalSecret. The GitHub deploy key is a protected Argo repository Secret;
-its private material is never stored in Git. The local-path DEV PVC has no
-dedicated logical backup producer yet: keep only experimental data there.
-Staging is prepared in Git but not applied; production requires independent
+its private material is never stored in Git. The k3s PostgreSQL logical producer
+captured a DEV dump, validated it with an isolated restore, and the scheduled
+2026-09-29 Local/R2 Restic snapshots both contain that dump. STAGING is deployed
+under a manual-sync Argo Application; its first logical dump and off-host copy
+await the next scheduled backup. Production requires independent
 data, identity, payment, security, route, and rollback decisions. The existing
 Docker `ecommerce-postgres` databases are an empty retained scaffold by
-observed row counts; this application is not connected to them. Legacy
-the live Gitea-backed auth-service and Gitea are separate dependencies. Newer
+observed row counts; this application is not connected to them. The live
+Gitea-backed legacy auth-service and Gitea are separate dependencies. Newer
 `apps/auth-service` and `apps/web` source projects exist in this repository.
 The new auth-service is intended and participates in the full Nx CI gate;
 its tests use in-memory JWT keys and mocks instead of production keys or an
 unmanaged localhost database. It remains undeployed. The web project also
-participates in CI but has no verified homelab deployment yet. The API DEV
-deployment remains pinned to its last independently verified digest until a
-new whole-workspace CI run and GHCR publication pass.
+participates in CI but has no verified homelab deployment yet. DEV and STAGING
+remain pinned to the last independently verified API digest until a new
+whole-workspace CI run and GHCR publication pass.
