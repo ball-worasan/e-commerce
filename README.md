@@ -5,10 +5,11 @@ Nx/pnpm monorepo for a small store. The target architecture is a **modular monol
 modules call each other in process. PostgreSQL stores users, products, carts,
 and orders. There is no payment provider or public production deployment.
 
-The source now contains integrated registration, RS256 login, user-owned carts
-and orders, product browsing, and a basic browser storefront. **These changes
-are not yet the verified DEV/STAGING release.** Both clusters remain on their
-previous digest until new CI, image, migration, and rollout gates pass.
+The source contains integrated registration, RS256 login, user-owned carts
+and orders, product browsing, and a basic browser storefront. The API and web
+run internally in DEV with verified synthetic service-level flows. STAGING
+remains on the previous API digest until post-migration DEV off-host backup
+coverage is verified and a deliberate manual promotion passes its gates.
 
 `apps/auth-service` is the **new GitHub repository's undeployed source project**.
 It is temporarily retained while its Prisma/Seller history and removal gate are

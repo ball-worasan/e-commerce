@@ -8,9 +8,10 @@ The separate new-repository `apps/auth-service` is retained temporarily for
 source review and is not a deployment target. The legacy Gitea-backed
 auth-service DEV/STAGING/PROD Applications are distinct and untouched.
 
-The integrated API and web source have **not** been released to k3s yet.
-The currently running DEV/STAGING API digest remains the last verified one.
-No production e-commerce workload or public route exists.
+The integrated API and web were released to internal-only DEV on 2026-10-01.
+The DEV migration completed, Argo is Synced/Healthy, and synthetic API and
+web-service flows passed. STAGING still runs the earlier API digest and has no
+web Deployment. No production e-commerce workload or public route exists.
 
 ## Runtime contract
 
@@ -61,8 +62,8 @@ and payment integration remain future work.
 ## Migrations and data safety
 
 `apps/api/drizzle/0001_*` adds users, sellers, and nullable ownership columns.
-`0002_*` adds a nullable, unique order-to-cart reference. Neither migration
-drops data or rewrites existing rows. Previously anonymous carts/orders remain
+`0002_*` adds a nullable, unique order-to-cart reference. `0003_*` adds an
+order-history index. None drops data or rewrites existing rows. Previously anonymous carts/orders remain
 stored but are not exposed through the authenticated user routes. Review the
 SQL and verify a fresh logical backup before applying either migration to
 DEV/STAGING. Never run `prisma migrate reset` on live data. The integrated API
@@ -98,15 +99,15 @@ GitOps. Never deploy mutable `main` as the source of truth.
 
 ## Release gates
 
-1. Complete workspace lint/test/build/typecheck and GitHub Actions validation.
-2. Verify both GHCR digests and linux/amd64 pullability.
-3. Add independent DEV and STAGING RS256 key pairs through Infisical/ESO. Do
-   not reuse legacy keys. Mount private/public files read-only in the API pod.
-4. Review migrations and verify current logical backup coverage.
-5. Update DEV migration and API images through GitOps; verify health and the
-   full synthetic auth/commerce flow. Deploy the web internally and verify the
-   same flow through its actual UI.
-6. Promote the same verified digests to STAGING with manual Argo sync. Repeat
+1. DEV source/CI, GHCR digests, independent RS256 keys, migration, API, and
+   internal web rollout were verified on 2026-10-01. The service-level
+   synthetic auth/commerce flow passed; an automated real-browser interaction
+   test remains to be added.
+2. Verify a scheduled post-migration DEV logical dump in both Local and R2
+   Restic repositories before promoting STAGING. A protected local logical
+   dump was created and inspected immediately after the migration, but this
+   does not prove off-host coverage.
+3. Promote the same verified digests to STAGING with manual Argo sync. Repeat
    health, smoke, persistence, and backup checks.
 7. Make separate decisions for payment, production domain/TLS, identity abuse
    controls, inventory release, monitoring, and public security before PROD.
