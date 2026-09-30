@@ -1,108 +1,115 @@
 # Development and deployment
 
-## Runtime and scope
+## Architecture and current state
 
-`apps/api` is one NestJS/Node 24 service on TCP port 3000. It uses PostgreSQL
-through Drizzle ORM. `GET /health` is process liveness; `GET /ready` checks the
-database. Nest validation rejects unknown fields. Logs are JSON and omit request
-bodies and credentials. SIGTERM triggers a graceful database-pool close.
+`apps/api` is the single NestJS backend. It contains auth, product, cart, and
+order modules and uses Drizzle/PostgreSQL. `apps/web` is a Next.js storefront.
+The separate new-repository `apps/auth-service` is retained temporarily for
+source review and is not a deployment target. The legacy Gitea-backed
+auth-service DEV/STAGING/PROD Applications are distinct and untouched.
 
-Product reads are open. All writes and all cart/order reads require the
-`x-dev-write-key` header matching `DEV_WRITE_KEY`. When the key is unset, these
-routes fail closed. This is **DEV-only access control**, not user authentication.
-Do not deploy the API publicly or to production without an identity and
-authorization design. There is no payment integration.
+The integrated API and web source have **not** been released to k3s yet.
+The currently running DEV/STAGING API digest remains the last verified one.
+No production e-commerce workload or public route exists.
 
-Prices and totals are integer minor currency units (`priceMinor`, `totalMinor`).
-Cart totals use current product prices. Creating an order snapshots those
-prices in an atomic transaction and creates a `pending` order. It does not
-reserve inventory, charge a customer, or perform fulfillment. Checkout
-idempotency and customer ownership remain future product work.
+## Runtime contract
 
-## Endpoints
+The API listens on `PORT` (default 3000). `/health` is process liveness and
+`/ready` checks PostgreSQL. Provide `DATABASE_URL` or the `DB_HOST`, `DB_PORT`,
+`DB_NAME`, `DB_USER`, `DB_PASSWORD` group. `JWT_PRIVATE_KEY_PATH` and
+`JWT_PUBLIC_KEY_PATH` point to protected RS256 key files; startup fails closed
+without them. `DEV_WRITE_KEY` still guards product management and must be
+replaced with an administrative role gate before public release. Do not use
+production or legacy auth keys as test fixtures.
 
-| Method | Path | Purpose |
+The browser talks to Next.js same-origin route handlers. Next.js forwards to
+the API at `API_INTERNAL_ORIGIN`, which should be an internal ClusterIP URL in
+k3s. Login sets a 15-minute HttpOnly, SameSite=Lax cookie; the Secure flag is
+set in production mode. The browser never receives the access token in JSON.
+Mutating browser routes require a custom request header as a basic CSRF
+barrier. Logout removes the cookie; an already stolen stateless JWT remains
+valid until expiry. Public deployment needs a final CORS, proxy-header, CSRF,
+cookie-domain, and login-abuse review.
+
+The cart identifier is stored in browser localStorage; it is not an auth token.
+The API enforces user ownership, so a cart ID from another account is rejected.
+
+## API routes
+
+| Method | Path | Access |
 | --- | --- | --- |
-| GET | `/health` | Liveness |
-| GET | `/ready` | Database readiness |
-| GET | `/products`, `/products/:id` | Product reads |
-| POST | `/products` | Create product |
-| PATCH | `/products/:id` | Update or soft-disable product |
-| POST | `/cart` | Create cart |
-| GET | `/cart/:cartId` | Read cart and recalculated total |
-| POST | `/cart/:cartId/items` | Add product |
-| PATCH | `/cart/:cartId/items/:itemId` | Change quantity |
-| DELETE | `/cart/:cartId/items/:itemId` | Remove item |
-| POST | `/orders` | Create pending order from cart |
-| GET | `/orders`, `/orders/:id` | Read orders |
+| GET | `/health`, `/ready` | Public internal checks |
+| POST | `/auth/register`, `/auth/login` | Public |
+| GET | `/auth/me` | RS256 bearer token |
+| GET | `/products`, `/products/:id` | Public |
+| POST, PATCH | `/products`, `/products/:id` | Temporary `DEV_WRITE_KEY` |
+| POST, GET, PATCH, DELETE | `/cart` and child routes | Authenticated owner |
+| POST, GET | `/orders` and child routes | Authenticated owner |
 
-## Configuration
+Registration normalizes email to lowercase and hashes passwords with bcrypt.
+Login issues an RS256 access token. `/auth/me` resolves the current user from
+PostgreSQL and returns no password hash. No refresh token, social login, or
+password reset is active in the integrated API.
 
-Use a local untracked `.env`, an isolated test container, or a secret manager;
-`.env.example` contains placeholders only. `PORT` defaults to 3000. Provide
-either `DATABASE_URL` or all of `DB_HOST`, `DB_PORT` (default 5432), `DB_NAME`,
-`DB_USER`, and `DB_PASSWORD`. `DEV_WRITE_KEY` enables guarded routes. Never
-commit populated environment files or log credentials.
+Prices and totals use integer minor currency units. Order creation snapshots
+prices and items in a transaction, reserves stock with conditional updates,
+and allows at most one order per cart. `pending` means payment is outstanding;
+no payment is collected or simulated. Cancellation/release of reserved stock
+and payment integration remain future work.
 
-## Develop and test
+## Migrations and data safety
 
-With Node 24, pnpm 10.17.1, and an **isolated** PostgreSQL database:
+`apps/api/drizzle/0001_*` adds users, sellers, and nullable ownership columns.
+`0002_*` adds a nullable, unique order-to-cart reference. Neither migration
+drops data or rewrites existing rows. Previously anonymous carts/orders remain
+stored but are not exposed through the authenticated user routes. Review the
+SQL and verify a fresh logical backup before applying either migration to
+DEV/STAGING. Never run `prisma migrate reset` on live data. The integrated API
+does not use the retained Docker `ecommerce-postgres` or legacy auth PVCs.
+
+For local development, use a disposable PostgreSQL instance and test-only key
+pair. Then run:
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm nx run-many -t lint test typecheck build --parallel=2
-pnpm --filter @ecommerce/api exec drizzle-kit generate --config=drizzle.config.ts
+pnpm nx run-many -t lint test build typecheck --parallel=2
 node apps/api/migrate.mjs
 pnpm nx serve api
 ```
 
-The migration command applies reviewed versioned SQL to the configured
-database; it is deliberately separate from app startup. Never point it at the
-retained `ecommerce-postgres` instance without a data-ownership and backup
-decision. Local and CI tests do not require that live instance. The disposable
-Docker smoke test uses `apps/api/smoke.mjs` with `SMOKE_BASE_URL`,
-`DEV_WRITE_KEY`, and `SMOKE_ALLOW_WRITES=1` against an isolated target.
+Run the web on a different port, for example 3001, with
+`API_INTERNAL_ORIGIN=http://127.0.0.1:3000`. The API smoke script exercises
+registration, login, product, cart, order, ownership, duplicate order
+rejection, and totals against an isolated database only.
 
-## Container and delivery
+## Containers and CI
 
 ```sh
 docker build -f apps/api/Dockerfile -t e-commerce-api:local .
+docker build -f apps/web/Dockerfile -t e-commerce-web:local .
 ```
 
-The multi-stage image runs as the non-root `node` user. Run `node migrate.mjs`
-as a separate, deliberate action against an isolated database before starting
-`node main.js`. The image healthcheck calls `/health`; Kubernetes readiness
-should call `/ready`.
+Both images use Node 24 and run as the non-root `node` user. API migrations run
+as a separate Job. The web image is a Next.js standalone build. The GitHub
+Actions validation job runs the complete Nx workspace; API and web images
+publish only after it passes. Use immutable `sha-<commit>` tags or digests for
+GitOps. Never deploy mutable `main` as the source of truth.
 
-GitHub Actions first validates the Nx workspace. A successful push to `main`
-then publishes `ghcr.io/ball-worasan/e-commerce-api:sha-<full-commit-sha>` and
-the convenience `:main` tag using `GITHUB_TOKEN`. GitOps must deploy the
-immutable SHA tag or a digest, never rely on `:main`. Package visibility and
-k3s pull access must be verified before Argo sync.
+## Release gates
 
-The verified path is GitHub → Actions → GHCR → `homelab-gitops` → Argo CD →
-k3s DEV and STAGING. DEV became Ready on 2026-09-28. STAGING was manually
-synced on 2026-09-29 with a separate Infisical scope, PostgreSQL 18, and 2 GiB
-PVC. In both environments, the migration hook completed, internal synthetic
-product/cart/order flows passed, and the API recovered from a pod replacement
-with data intact. Both Services are ClusterIP only; use a temporary local
-port-forward for manual checks rather than exposing a NodePort.
+1. Complete workspace lint/test/build/typecheck and GitHub Actions validation.
+2. Verify both GHCR digests and linux/amd64 pullability.
+3. Add independent DEV and STAGING RS256 key pairs through Infisical/ESO. Do
+   not reuse legacy keys. Mount private/public files read-only in the API pod.
+4. Review migrations and verify current logical backup coverage.
+5. Update DEV migration and API images through GitOps; verify health and the
+   full synthetic auth/commerce flow. Deploy the web internally and verify the
+   same flow through its actual UI.
+6. Promote the same verified digests to STAGING with manual Argo sync. Repeat
+   health, smoke, persistence, and backup checks.
+7. Make separate decisions for payment, production domain/TLS, identity abuse
+   controls, inventory release, monitoring, and public security before PROD.
 
-DEV credentials come from Infisical through the `ecommerce-dev-secrets`
-ExternalSecret. The GitHub deploy key is a protected Argo repository Secret;
-its private material is never stored in Git. The k3s PostgreSQL logical producer
-captured a DEV dump, validated it with an isolated restore, and the scheduled
-2026-09-29 Local/R2 Restic snapshots both contain that dump. STAGING is deployed
-under a manual-sync Argo Application; its first logical dump and off-host copy
-await the next scheduled backup. Production requires independent
-data, identity, payment, security, route, and rollback decisions. The existing
-Docker `ecommerce-postgres` databases are an empty retained scaffold by
-observed row counts; this application is not connected to them. The live
-Gitea-backed legacy auth-service and Gitea are separate dependencies. Newer
-`apps/auth-service` and `apps/web` source projects exist in this repository.
-The new auth-service is intended and participates in the full Nx CI gate;
-its tests use in-memory JWT keys and mocks instead of production keys or an
-unmanaged localhost database. It remains undeployed. The web project also
-participates in CI but has no verified homelab deployment yet. DEV and STAGING
-remain pinned to the last independently verified API digest until a new
-whole-workspace CI run and GHCR publication pass.
+Rollback an API rollout by reverting the GitOps digest to the prior verified
+image. Additive tables/columns are intentionally retained; do not run an
+automatic down migration. Roll back web independently by its prior digest.
