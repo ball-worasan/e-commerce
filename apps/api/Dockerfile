@@ -8,6 +8,7 @@ FROM node:24-bookworm-slim AS production-deps
 WORKDIR /app
 RUN npm install --global pnpm@10.17.1
 COPY --from=build /workspace/apps/api/dist/package.json /workspace/apps/api/dist/pnpm-lock.yaml /workspace/apps/api/dist/pnpm-workspace.yaml ./
+COPY --from=build /workspace/apps/api/dist/workspace_modules ./workspace_modules
 RUN pnpm install --prod --frozen-lockfile
 
 FROM node:24-bookworm-slim

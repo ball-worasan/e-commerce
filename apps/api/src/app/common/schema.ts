@@ -28,8 +28,28 @@ export const products = pgTable('products', {
   check('products_stock_nonnegative', sql`${table.stockQuantity} >= 0`),
 ]);
 
+export const userRole = pgEnum('user_role', ['MEMBER', 'SELLER', 'ADMIN', 'SUPER_ADMIN']);
+export const sellerStatus = pgEnum('seller_status', ['ACTIVE', 'SUSPENDED']);
+
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey(),
+  email: varchar('email', { length: 320 }).notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  role: userRole('role').notNull().default('MEMBER'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const sellers = pgTable('sellers', {
+  id: uuid('id').primaryKey(),
+  userId: uuid('user_id').notNull().unique().references(() => users.id),
+  storeName: varchar('store_name', { length: 200 }).notNull(),
+  status: sellerStatus('status').notNull().default('ACTIVE'),
+});
+
 export const carts = pgTable('carts', {
   id: uuid('id').primaryKey(),
+  userId: uuid('user_id').references(() => users.id),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -47,6 +67,8 @@ export const orderStatus = pgEnum('order_status', ['pending', 'confirmed', 'canc
 
 export const orders = pgTable('orders', {
   id: uuid('id').primaryKey(),
+  userId: uuid('user_id').references(() => users.id),
+  cartId: uuid('cart_id').unique().references(() => carts.id),
   status: orderStatus('status').notNull().default('pending'),
   subtotalMinor: integer('subtotal_minor').notNull(),
   totalMinor: integer('total_minor').notNull(),
