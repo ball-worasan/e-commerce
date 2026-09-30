@@ -71,5 +71,5 @@ assert.equal((await request(`/cart/${cartId}`)).status, 404);
 assert.equal((await request(`/orders/${order.body.id}`)).status, 404);
 assert.equal((await request('/orders')).body.length, 0);
 accessToken = originalToken;
-assert.equal((await request(`/cart/${cartId}/items/${itemId}`, 'DELETE')).body.totalMinor, 0);
+assert.equal((await request(`/cart/${cartId}/items/${itemId}`, 'DELETE')).status, 409);
 console.log('API smoke PASS: auth, health, readiness, validation, product, owned cart, owned order, server totals');

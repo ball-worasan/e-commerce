@@ -53,7 +53,8 @@ password reset is active in the integrated API.
 
 Prices and totals use integer minor currency units. Order creation snapshots
 prices and items in a transaction, reserves stock with conditional updates,
-and allows at most one order per cart. `pending` means payment is outstanding;
+allows at most one order per cart, and closes that cart to later edits.
+`pending` means payment is outstanding;
 no payment is collected or simulated. Cancellation/release of reserved stock
 and payment integration remain future work.
 

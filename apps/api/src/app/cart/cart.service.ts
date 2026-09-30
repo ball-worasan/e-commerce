@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { randomUUID } from 'node:crypto';
 import { eq, and } from 'drizzle-orm';
 import { DatabaseService } from '../common/database.service';
-import { carts, cartItems, products } from '../common/schema';
+import { carts, cartItems, orders, products } from '../common/schema';
 import { calculateTotal } from '../common/totals';
 import { AddCartItemDto, UpdateCartItemDto } from './cart.dto';
 
@@ -30,6 +30,7 @@ export class CartService {
 
   async add(id: string, input: AddCartItemDto, userId: string) {
     await this.get(id, userId);
+    await this.ensureOpen(id);
     const [product] = await this.database.db.select().from(products).where(eq(products.id, input.productId));
     if (!product || !product.active) throw new NotFoundException('Active product not found');
     if (input.quantity > product.stockQuantity) throw new BadRequestException('Quantity exceeds available stock');
@@ -49,6 +50,7 @@ export class CartService {
 
   async update(id: string, itemId: string, input: UpdateCartItemDto, userId: string) {
     await this.get(id, userId);
+    await this.ensureOpen(id);
     const [item] = await this.database.db.select().from(cartItems)
       .where(and(eq(cartItems.id, itemId), eq(cartItems.cartId, id)));
     if (!item) throw new NotFoundException('Cart item not found');
@@ -61,9 +63,16 @@ export class CartService {
 
   async remove(id: string, itemId: string, userId: string) {
     await this.get(id, userId);
+    await this.ensureOpen(id);
     const removed = await this.database.db.delete(cartItems)
       .where(and(eq(cartItems.id, itemId), eq(cartItems.cartId, id))).returning({ id: cartItems.id });
     if (!removed.length) throw new NotFoundException('Cart item not found');
     return this.get(id, userId);
+  }
+
+  private async ensureOpen(id: string): Promise<void> {
+    const [ordered] = await this.database.db.select({ id: orders.id }).from(orders)
+      .where(eq(orders.cartId, id));
+    if (ordered) throw new ConflictException('Cart already ordered');
   }
 }

@@ -1,6 +1,7 @@
 import {
   boolean,
   check,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -75,7 +76,7 @@ export const orders = pgTable('orders', {
   currency: varchar('currency', { length: 3 }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => [index('orders_user_created_idx').on(table.userId, table.createdAt)]);
 
 export const orderItems = pgTable('order_items', {
   id: uuid('id').primaryKey(),
