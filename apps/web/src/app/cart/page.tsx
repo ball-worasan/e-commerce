@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { formatMoney, storeRequest, type Cart, type Order } from '../../lib/store';
+import { useEffect, useState, type FormEvent } from 'react';
+import { formatMoney, storeRequest, type Cart, type CartItem, type Order } from '../../lib/store';
 
 export default function CartPage() {
   const router = useRouter();
@@ -43,13 +43,26 @@ export default function CartPage() {
     <h1>Cart</h1><Link href="/">Continue shopping</Link>
     {cart?.items.map((item) => <article key={item.id} style={{ borderBottom: '1px solid #ccc', padding: '1rem 0' }}>
       <h2>{item.name}</h2><p>{formatMoney(item.unitPriceMinor, item.currency)} each</p>
-      <label htmlFor={`quantity-${item.id}`}>Quantity</label>{' '}
-      <input id={`quantity-${item.id}`} type="number" min={1} max={100} value={item.quantity}
-        onChange={(event) => { const value = Number(event.target.value); if (Number.isInteger(value) && value >= 1 && value <= 100) void change(item.id, value); }} />{' '}
-      <button onClick={() => void change(item.id, 0)}>Remove</button>
+      <CartItemEditor item={item} onChange={(quantity) => change(item.id, quantity)} />
     </article>)}
     {cart?.items.length ? <><p>Total: {formatMoney(cart.totalMinor, cart.currency ?? 'THB')}</p>
       <button onClick={checkout}>Create order</button><p>Payment is not collected here.</p></> : null}
     {message && <p role="status">{message}</p>}
   </main>;
+}
+
+function CartItemEditor({ item, onChange }: { item: CartItem; onChange: (quantity: number) => Promise<void> }) {
+  const [quantity, setQuantity] = useState(item.quantity);
+  useEffect(() => setQuantity(item.quantity), [item.quantity]);
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (Number.isInteger(quantity) && quantity >= 1 && quantity <= 100) void onChange(quantity);
+  }
+  return <form onSubmit={submit}>
+    <label htmlFor={`quantity-${item.id}`}>Quantity</label>{' '}
+    <input id={`quantity-${item.id}`} type="number" min={1} max={100} value={quantity}
+      onChange={(event) => setQuantity(Number(event.target.value))} />{' '}
+    <button type="submit" disabled={!Number.isInteger(quantity) || quantity < 1 || quantity > 100}>Update</button>{' '}
+    <button type="button" onClick={() => void onChange(0)}>Remove</button>
+  </form>;
 }
